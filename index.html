@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Living Dot</title><style>
+:root{color-scheme:dark}body{margin:0;background:#0b0b10;color:#e8e8f0;font:16px system-ui,sans-serif;padding:24px;max-width:900px;margin:auto}
+canvas{width:100%;border-radius:14px;background:#0b0b10;border:1px solid #23232f}h1{margin:0 0 4px}h2{margin-top:32px}
+#st,small{color:#9a9ab0}.tags span{display:inline-block;margin:4px 6px 4px 0;padding:4px 12px;border-radius:99px;background:#1c1c28;border:1px solid #2e2e40}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}.c{background:#14141d;border:1px solid #23232f;border-radius:12px;padding:14px}.c p{margin:8px 0 0}</style></head><body>
+<h1>The Living Dot</h1><div id="st">waking up…</div><br>
+<canvas id="w" width="720" height="400"></canvas>
+<h2>Growth</h2><canvas id="ch" width="720" height="120"></canvas>
+<h2>AI Developer Portfolio <small>· <span id="own"></span> · written by the dot's own evolution</small></h2>
+<div class="tags" id="tags"></div><br><div class="cards" id="cards"></div>
+<script>
+const OWNER="Chanchan",$=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let G={gen:0,fitness:0,sigma:.15,genes:{speed:1,sense:20,turn:.2,metab:1,hue:200}},H=[],P=[];$("#own").textContent=OWNER;
+async function load(){try{const t=Date.now();[G,H,P]=await Promise.all(["genome","history","portfolio"].map(n=>fetch(n+".json?t="+t).then(r=>r.json())))}catch(e){}render()}
+function render(){$("#st").textContent=`Generation ${G.gen} · fitness ${G.fitness} · mutation size ${G.sigma}`;chart();
+ const tags=[...new Set(P.flatMap(p=>p.tags))];$("#tags").innerHTML=tags.map(t=>`<span>${esc(t)}</span>`).join("")||"<i>Nothing unlocked yet. The dot is still learning.</i>";
+ $("#cards").innerHTML=P.slice().reverse().map(p=>`<div class=c><b>${esc(p.title)}</b><br><small>generation ${p.gen} · ${esc(p.date.slice(0,10))}</small><p>${esc(p.text)}</p></div>`).join("")}
+function chart(){const c=$("#ch"),x=c.getContext("2d");x.clearRect(0,0,c.width,c.height);if(H.length<2)return;
+ const s=Math.ceil(H.length/200),d=H.filter((_,i)=>i%s==0),m=Math.max(...d.map(p=>p.fitness),1);x.strokeStyle=`hsl(${G.genes.hue},80%,60%)`;x.lineWidth=2;x.beginPath();
+ d.forEach((p,i)=>{const px=i/(d.length-1)*c.width,py=c.height-p.fitness/m*(c.height-10)-5;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke()}
+const cv=$("#w"),cx=cv.getContext("2d"),W=cv.width,Hh=cv.height,k=1.5;
+let f=Array.from({length:25},()=>[Math.random()*W,Math.random()*Hh]),d={x:W/2,y:Hh/2,a:0};
+function tick(){const g=G.genes;cx.fillStyle="rgba(11,11,16,.15)";cx.fillRect(0,0,W,Hh);
+ let b=f[0],bd=1e9;for(const p of f){const q=Math.hypot(p[0]-d.x,p[1]-d.y);if(q<bd){bd=q;b=p}}
+ if(bd<g.sense*k){const df=(Math.atan2(b[1]-d.y,b[0]-d.x)-d.a+3*Math.PI)%(2*Math.PI)-Math.PI;d.a+=Math.max(-g.turn,Math.min(g.turn,df))}else d.a+=(Math.random()*2-1)*g.turn;
+ d.x=(d.x+Math.cos(d.a)*g.speed*k+W)%W;d.y=(d.y+Math.sin(d.a)*g.speed*k+Hh)%Hh;
+ if(bd<8){b[0]=Math.random()*W;b[1]=Math.random()*Hh}
+ cx.fillStyle="#556";for(const p of f)cx.fillRect(p[0]-2,p[1]-2,4,4);
+ cx.shadowBlur=18;cx.shadowColor=cx.fillStyle=`hsl(${g.hue},90%,60%)`;cx.beginPath();cx.arc(d.x,d.y,4+Math.min(8,G.fitness/6),0,7);cx.fill();cx.shadowBlur=0;requestAnimationFrame(tick)}
+load();tick();setInterval(load,60000);
+</script></body></html>
